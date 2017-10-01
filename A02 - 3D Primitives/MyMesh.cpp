@@ -276,7 +276,30 @@ void MyMesh::GenerateCone(float a_fRadius, float a_fHeight, int a_nSubdivisions,
 	Init();
 
 	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
+	//calculate the diff theta by using the nuber of subdivisions
+	float theta = 0; 
+	float diff = (2 * PI) / a_nSubdivisions;
+	vector3 pointFirst(0.0f, 0.0f, -(a_fHeight * 0.5f));
+	//create a vector to store the points
+	std::vector<vector3> points;
+	points.push_back(pointFirst);
+	//calculate the points based on the number of sub divisions radius and diffTheta
+	for (int i = 0; i < a_nSubdivisions; i++) 
+	{
+		points.push_back(vector3{ (a_fRadius * cos(theta)),(a_fRadius * sin(theta)), -(a_fHeight * 0.5f) });
+		theta += diff;
+	}
+	points.push_back(vector3{ 0.0f, 0.0f, (a_fHeight * 0.5f) });
+
+	for (int i = 1; i < a_nSubdivisions; i++)
+	{
+		AddTri(points[0], points[i + 1], points[i]);
+		AddTri(points[a_nSubdivisions + 1], points[i], points[i + 1]);
+	}
+
+	//add in the last chunk of the shape manually
+	AddTri(points[0], points[1], points[a_nSubdivisions]);
+	AddTri(points[a_nSubdivisions + 1], points[a_nSubdivisions], points[1]);
 	// -------------------------------
 
 	// Adding information about color
@@ -300,7 +323,41 @@ void MyMesh::GenerateCylinder(float a_fRadius, float a_fHeight, int a_nSubdivisi
 	Init();
 
 	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
+	//calculate the diff theta by using the nuber of subdivisions
+	float theta = 0;
+	float diff = (2 * PI) / a_nSubdivisions;
+	vector3 pointFirst(0.0f, 0.0f, -(a_fHeight * 0.5f));
+	//create a vector to store the points
+	std::vector<vector3> points;
+	points.push_back(pointFirst);
+	//calculate the points based on the number of sub divisions radius and diffTheta
+	//odds in the vector are on the bottom of the cylander while evens are on the top
+	for (int i = 0; i < a_nSubdivisions; i++)
+	{
+		points.push_back(vector3{ (a_fRadius * cos(theta)),(a_fRadius * sin(theta)), -(a_fHeight * 0.5f) });
+		points.push_back(vector3{ (a_fRadius * cos(theta)),(a_fRadius * sin(theta)), (a_fHeight * 0.5f) });
+		theta += diff;
+	}
+	points.push_back(vector3{ 0.0f, 0.0f, (a_fHeight * 0.5f) });
+
+	for (int i = 1; i < a_nSubdivisions; i++)
+	{
+		if (i % 2 == 0)
+		{
+			AddTri(points[0], points[i + 3], points[i + 1]);
+			AddTri(points[0], points[i + 5], points[i + 3]);
+			AddTri(points[(a_nSubdivisions * 2) + 1], points[i], points[i + 2]);
+			AddTri(points[(a_nSubdivisions * 2) + 1], points[i + 2], points[i + 4]);
+		}
+		else
+		{
+			AddTri(points[0], points[i + 2], points[i]);
+			AddTri(points[0], points[i + 4], points[i + 2]);
+			AddTri(points[(a_nSubdivisions * 2) + 1], points[i + 1], points[i + 3]);
+			AddTri(points[(a_nSubdivisions * 2) + 1], points[i + 3], points[i + 5]);
+		}
+		AddQuad(points[i], points[i + 1], points[i + 2], points[i + 3]);
+	}
 	// -------------------------------
 
 	// Adding information about color
