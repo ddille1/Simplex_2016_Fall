@@ -328,36 +328,30 @@ void MyMesh::GenerateCylinder(float a_fRadius, float a_fHeight, int a_nSubdivisi
 	float diff = (2 * PI) / a_nSubdivisions;
 	vector3 pointFirst(0.0f, 0.0f, -(a_fHeight * 0.5f));
 	//create a vector to store the points
-	std::vector<vector3> points;
-	points.push_back(pointFirst);
+	std::vector<vector3> pointsBottom;
+	std::vector<vector3> pointsTop;
+	pointsBottom.push_back(pointFirst);
+	pointsTop.push_back(vector3{ 0.0f, 0.0f, (a_fHeight * 0.5f) });
 	//calculate the points based on the number of sub divisions radius and diffTheta
 	//odds in the vector are on the bottom of the cylander while evens are on the top
 	for (int i = 0; i < a_nSubdivisions; i++)
 	{
-		points.push_back(vector3{ (a_fRadius * cos(theta)),(a_fRadius * sin(theta)), -(a_fHeight * 0.5f) });
-		points.push_back(vector3{ (a_fRadius * cos(theta)),(a_fRadius * sin(theta)), (a_fHeight * 0.5f) });
+		pointsBottom.push_back(vector3{ (a_fRadius * cos(theta)),(a_fRadius * sin(theta)), -(a_fHeight * 0.5f) });
+		pointsTop.push_back(vector3{ (a_fRadius * cos(theta)),(a_fRadius * sin(theta)), (a_fHeight * 0.5f) });
 		theta += diff;
 	}
-	points.push_back(vector3{ 0.0f, 0.0f, (a_fHeight * 0.5f) });
 
 	for (int i = 1; i < a_nSubdivisions; i++)
 	{
-		if (i % 2 == 0)
-		{
-			AddTri(points[0], points[i + 3], points[i + 1]);
-			AddTri(points[0], points[i + 5], points[i + 3]);
-			AddTri(points[(a_nSubdivisions * 2) + 1], points[i], points[i + 2]);
-			AddTri(points[(a_nSubdivisions * 2) + 1], points[i + 2], points[i + 4]);
-		}
-		else
-		{
-			AddTri(points[0], points[i + 2], points[i]);
-			AddTri(points[0], points[i + 4], points[i + 2]);
-			AddTri(points[(a_nSubdivisions * 2) + 1], points[i + 1], points[i + 3]);
-			AddTri(points[(a_nSubdivisions * 2) + 1], points[i + 3], points[i + 5]);
-		}
-		AddQuad(points[i], points[i + 1], points[i + 2], points[i + 3]);
+		AddTri(pointsBottom[0], pointsBottom[i + 1], pointsBottom[i]);
+		AddTri(pointsTop[0], pointsTop[i], pointsTop[i + 1]);
+		AddQuad(pointsBottom[i + 1], pointsTop[i + 1], pointsBottom[i], pointsTop[i]);
+
 	}
+	//add in the last chunk of the shape manually
+	AddTri(pointsBottom[0], pointsBottom[1], pointsBottom[a_nSubdivisions]);
+	AddTri(pointsTop[0], pointsTop[a_nSubdivisions], pointsTop[1]);
+	AddQuad(pointsBottom[1], pointsTop[1], pointsBottom[a_nSubdivisions], pointsTop[a_nSubdivisions]);
 	// -------------------------------
 
 	// Adding information about color
@@ -387,7 +381,38 @@ void MyMesh::GenerateTube(float a_fOuterRadius, float a_fInnerRadius, float a_fH
 	Init();
 
 	// Replace this with your code
-	GenerateCube(a_fOuterRadius * 2.0f, a_v3Color);
+	//calculate the diff theta by using the nuber of subdivisions
+	float theta = 0;
+	float diff = (2 * PI) / a_nSubdivisions;
+	//create a vector to store the points
+	std::vector<vector3> pointsBottomInner;
+	std::vector<vector3> pointsTopInner;
+	std::vector<vector3> pointsBottomOuter;
+	std::vector<vector3> pointsTopOuter;
+	//calculate the points based on the number of sub divisions radius and diffTheta
+	//odds in the vector are on the bottom of the cylander while evens are on the top
+	for (int i = 0; i < a_nSubdivisions; i++)
+	{
+		pointsBottomInner.push_back(vector3{ (a_fInnerRadius * cos(theta)),(a_fInnerRadius * sin(theta)), -(a_fHeight * 0.5f) });
+		pointsTopInner.push_back(vector3{ (a_fInnerRadius * cos(theta)),(a_fInnerRadius * sin(theta)), (a_fHeight * 0.5f) });
+		pointsBottomOuter.push_back(vector3{ (a_fOuterRadius * cos(theta)),(a_fOuterRadius * sin(theta)), -(a_fHeight * 0.5f) });
+		pointsTopOuter.push_back(vector3{ (a_fOuterRadius * cos(theta)),(a_fOuterRadius * sin(theta)), (a_fHeight * 0.5f) });
+		theta += diff;
+	}
+
+	for (int i = 0; i < a_nSubdivisions - 1; i++)
+	{
+		AddQuad(pointsBottomInner[i], pointsTopInner[i], pointsBottomInner[i + 1], pointsTopInner[i + 1]);
+		AddQuad(pointsBottomOuter[i + 1], pointsTopOuter[i + 1], pointsBottomOuter[i], pointsTopOuter[i]);
+		AddQuad(pointsBottomOuter[i], pointsBottomInner[i], pointsBottomOuter[i + 1], pointsBottomInner[i + 1]);
+		AddQuad(pointsTopOuter[i + 1], pointsTopInner[i + 1], pointsTopOuter[i], pointsTopInner[i]);
+
+	}
+	//add in the last chunk of the shape manually
+	AddQuad(pointsBottomInner[(a_nSubdivisions - 1)], pointsTopInner[(a_nSubdivisions - 1)], pointsBottomInner[0], pointsTopInner[0]);
+	AddQuad(pointsBottomOuter[0], pointsTopOuter[0], pointsBottomOuter[a_nSubdivisions - 1], pointsTopOuter[(a_nSubdivisions - 1)]);
+	AddQuad(pointsBottomOuter[(a_nSubdivisions - 1)], pointsBottomInner[(a_nSubdivisions - 1)], pointsBottomOuter[0], pointsBottomInner[0]);
+	AddQuad(pointsTopOuter[0], pointsTopInner[0], pointsTopOuter[(a_nSubdivisions - 1)], pointsTopInner[(a_nSubdivisions - 1)]);
 	// -------------------------------
 
 	// Adding information about color
@@ -437,14 +462,44 @@ void MyMesh::GenerateSphere(float a_fRadius, int a_nSubdivisions, vector3 a_v3Co
 		GenerateCube(a_fRadius * 2.0f, a_v3Color);
 		return;
 	}
-	if (a_nSubdivisions > 6)
-		a_nSubdivisions = 6;
+	//if (a_nSubdivisions > 6)
+		//a_nSubdivisions = 6;
 
 	Release();
 	Init();
 
 	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
+	float thetaRight = 0;
+	float thetaLeft = 0;
+	float oThetaRight = 0; 
+	float oThetaLeft = 0;
+	std::vector<vector3> points;
+
+	for (int i = 0; i < a_nSubdivisions; i++)
+	{
+		thetaLeft = ((PI*i) / a_nSubdivisions);
+		thetaRight = ((PI*(i + 1)) / a_nSubdivisions);
+		for (int j = 0; j < a_nSubdivisions; j++) 
+		{
+			oThetaLeft = ((2 * PI*j) / a_nSubdivisions);
+			oThetaRight = ((2 * PI*(j + 1)) / a_nSubdivisions);
+			//make the points theta is side to side while otheta is up and down this will create the points for the quads in the sphere and create its quad then iterate through to the next quad in the sphere
+			points.push_back(vector3{a_fRadius * cos(oThetaLeft) * sin(thetaLeft), a_fRadius * sin(oThetaLeft) * sin(thetaLeft), a_fRadius * cos(thetaLeft)});
+			points.push_back(vector3{ a_fRadius * cos(oThetaLeft) * sin(thetaRight), a_fRadius * sin(oThetaLeft) * sin(thetaRight), a_fRadius * cos(thetaRight) });
+			points.push_back(vector3{ a_fRadius * cos(oThetaRight) * sin(thetaLeft), a_fRadius * sin(oThetaRight) * sin(thetaLeft), a_fRadius * cos(thetaLeft) });
+			points.push_back(vector3{ a_fRadius * cos(oThetaRight) * sin(thetaRight), a_fRadius * sin(oThetaRight) * sin(thetaRight), a_fRadius * cos(thetaRight) });
+
+			//make the quad with the four points 
+			AddQuad(points[0], points[1], points[2], points[3]);
+
+			points.pop_back();
+			points.pop_back();
+			points.pop_back();
+			points.pop_back();
+		}
+	}
+
+
 	// -------------------------------
 
 	// Adding information about color
