@@ -23,6 +23,8 @@ class Application
 	String m_sProgrammer = "Alberto Bobadilla - labigm@rit.edu";
 	
 private:
+	//make a list of lists
+	std::vector<std::vector<vector3>> ListOfstopList;
 	static ImGuiObject gui; //GUI object
 	
 	uint m_uRenderCallCount = 0; //count of render calls per frame
