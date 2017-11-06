@@ -370,6 +370,14 @@ void Application::CameraRotation(float a_fSpeed)
 	}
 	//Change the Yaw and the Pitch of the camera
 	SetCursorPos(CenterX, CenterY);//Position the mouse in the center
+	//change the rotation of the camera
+	quaternion q1 = glm::angleAxis(glm::degrees(fAngleX), vector3(1.0f, 0.0f, 0.0f));
+	quaternion q2 = glm::angleAxis(glm::degrees(fAngleY), vector3(0.0f, 1.0f, 0.0f));
+	quaternion rotation =q1 * q2;
+	rotation = glm::normalize(rotation);
+	vector3 newTarget = m_pCamera->GetPosition() + (rotation * m_pCamera->GetTarget());
+	//vector3 newTarget = rotation * m_pCamera->GetTarget();
+	m_pCamera->SetTarget(newTarget);
 }
 //Keyboard
 void Application::ProcessKeyboard(void)

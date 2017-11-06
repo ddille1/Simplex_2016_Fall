@@ -33,6 +33,24 @@ void Application::Update(void)
 
 	//Is the first person camera active?
 	CameraRotation();
+	
+	//movement code
+	//forward
+	if (GetKeyState('W') & 0x8000)
+	{
+		auto movement = m_pCamera->GetTarget() - m_pCamera->GetPosition();
+		movement = glm::normalize(movement);
+		m_pCamera->SetTarget(m_pCamera->GetTarget() + movement);
+		m_pCamera->SetPosition(m_pCamera->GetPosition() + movement);
+	}
+	//backward
+	if (GetKeyState('S') & 0x8000)
+	{
+		auto movement = -(m_pCamera->GetTarget() - m_pCamera->GetPosition());
+		movement = glm::normalize(movement);
+		m_pCamera->SetTarget(m_pCamera->GetTarget() + movement);
+		m_pCamera->SetPosition(m_pCamera->GetPosition() + movement);
+	}
 
 	//Add objects to the Manager
 	for (int j = -50; j < 50; j += 2)
