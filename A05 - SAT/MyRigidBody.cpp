@@ -276,6 +276,345 @@ void MyRigidBody::AddToRenderList(void)
 
 uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 {
+	//bool either for whether the objects are colliding or not
+	bool isColliding = false;
+	//vector for the normals for the first cube
+	std::vector<glm::vec3> normalsOne;
+
+	//vector for the normals for the second cube
+	std::vector<glm::vec3> normalsTwo;
+
+	//Calculate the 8 corners of the first cube
+	vector3 v3Corner[8];
+	//Back square
+	v3Corner[0] = m_v3MinL;
+	v3Corner[1] = vector3(m_v3MaxL.x, m_v3MinL.y, m_v3MinL.z);
+	v3Corner[2] = vector3(m_v3MinL.x, m_v3MaxL.y, m_v3MinL.z);
+	v3Corner[3] = vector3(m_v3MaxL.x, m_v3MaxL.y, m_v3MinL.z);
+
+	//Front square
+	v3Corner[4] = vector3(m_v3MinL.x, m_v3MinL.y, m_v3MaxL.z);
+	v3Corner[5] = vector3(m_v3MaxL.x, m_v3MinL.y, m_v3MaxL.z);
+	v3Corner[6] = vector3(m_v3MinL.x, m_v3MaxL.y, m_v3MaxL.z);
+	v3Corner[7] = m_v3MaxL;
+
+	//Place the corners in world space
+	for (uint uIndex = 0; uIndex < 8; ++uIndex)
+	{
+		v3Corner[uIndex] = vector3(m_m4ToWorld * vector4(v3Corner[uIndex], 1.0f));
+	}
+
+	//Calculate the 8 corners of the second cube
+	vector3 v3CornerOther[8];
+	//Back square
+	v3CornerOther[0] = a_pOther->GetMinLocal;
+	v3CornerOther[1] = vector3(a_pOther->GetMaxLocal.x, a_pOther->GetMinLocal.y, a_pOther->GetMinLocal.z);
+	v3CornerOther[2] = vector3(a_pOther->GetMinLocal.x, a_pOther->GetMaxLocal.y, a_pOther->GetMinLocal.z);
+	v3CornerOther[3] = vector3(a_pOther->GetMaxLocal.x, a_pOther->GetMaxLocal.y, a_pOther->GetMinLocal.z);
+
+	//Front square
+	v3CornerOther[4] = vector3(a_pOther->GetMinLocal.x, a_pOther->GetMinLocal.y, a_pOther->GetMaxLocal.z);
+	v3CornerOther[5] = vector3(a_pOther->GetMaxLocal.x, a_pOther->GetMinLocal.y, a_pOther->GetMaxLocal.z);
+	v3CornerOther[6] = vector3(a_pOther->GetMinLocal.x, a_pOther->GetMaxLocal.y, a_pOther->GetMaxLocal.z);
+	v3CornerOther[7] = a_pOther->GetMaxLocal;
+
+	//Place the corners in world space
+	for (uint uIndex = 0; uIndex < 8; ++uIndex)
+	{
+		v3CornerOther[uIndex] = vector3(m_m4ToWorld * vector4(v3CornerOther[uIndex], 1.0f));
+	}
+
+	//using the corners calculate the normals using the corners of the first cube
+	glm::vec3 U(v3Corner[1] - v3Corner[0]);
+	glm::vec3 V(v3Corner[2] - v3Corner[0]);
+	normalsOne.push_back(glm::normalize(glm::vec3((U.y * V.z) - (U.z * V.y), (U.z * V.x) - (U.x * V.z), (U.x * V.y) - (U.y * V.x))));
+
+	glm::vec3 U(v3Corner[2] - v3Corner[3]);
+	glm::vec3 V(v3Corner[4] - v3Corner[3]);
+	normalsOne.push_back(glm::normalize(glm::vec3((U.y * V.z) - (U.z * V.y), (U.z * V.x) - (U.x * V.z), (U.x * V.y) - (U.y * V.x))));
+
+	glm::vec3 U(v3Corner[6] - v3Corner[1]);
+	glm::vec3 V(v3Corner[4] - v3Corner[1]);
+	normalsOne.push_back(glm::normalize(glm::vec3((U.y * V.z) - (U.z * V.y), (U.z * V.x) - (U.x * V.z), (U.x * V.y) - (U.y * V.x))));
+
+	//using the corners calculate the normals using the corners of the second cube
+	glm::vec3 U(v3CornerOther[1] - v3CornerOther[0]);
+	glm::vec3 V(v3CornerOther[2] - v3CornerOther[0]);
+	normalsTwo.push_back(glm::normalize(glm::vec3((U.y * V.z) - (U.z * V.y), (U.z * V.x) - (U.x * V.z), (U.x * V.y) - (U.y * V.x))));
+
+	glm::vec3 U(v3CornerOther[2] - v3CornerOther[3]);
+	glm::vec3 V(v3CornerOther[4] - v3CornerOther[3]);
+	normalsTwo.push_back(glm::normalize(glm::vec3((U.y * V.z) - (U.z * V.y), (U.z * V.x) - (U.x * V.z), (U.x * V.y) - (U.y * V.x))));
+
+	glm::vec3 U(v3CornerOther[6] - v3CornerOther[1]);
+	glm::vec3 V(v3CornerOther[4] - v3CornerOther[1]);
+	normalsTwo.push_back(glm::normalize(glm::vec3((U.y * V.z) - (U.z * V.y), (U.z * V.x) - (U.x * V.z), (U.x * V.y) - (U.y * V.x))));
+
+	//calculate the edge normals
+	std::vector<glm::vec3> edgeNormals;
+
+	glm::vec3 edgesCubeOne[3];
+	glm::vec3 edgesCubeTwo[3];
+	//calculate for the first cube
+	edgesCubeOne[0] = v3Corner[1] - v3Corner[0];
+	edgesCubeOne[1] = v3Corner[2] - v3Corner[1];
+	edgesCubeOne[2] = v3Corner[6] - v3Corner[1];
+
+	//calculate for the second cube
+	edgesCubeTwo[0] = v3CornerOther[1] - v3CornerOther[0];
+	edgesCubeTwo[1] = v3CornerOther[2] - v3CornerOther[1];
+	edgesCubeTwo[2] = v3CornerOther[6] - v3CornerOther[1];
+
+	//create the edge normals
+	for (int i = 0; i < 3; i++) 
+	{
+		for (int j = 0; j < 3; j++) 
+		{
+			edgeNormals.push_back(glm::normalize(glm::cross(edgesCubeOne[i], edgesCubeTwo[j])));
+		}
+	}
+
+	//get the normals (not the edge normals) for first object and project the min and max onto those and compare
+	for (int i = 0; i < normalsOne.size(); i++) 
+	{
+		//get the min and max projected along the axis for both cubes along the normals
+		float minOne;
+		float maxOne;
+		float minTwo;
+		float maxTwo;
+		//check the first cube 
+		//check the first points
+		minOne = glm::dot(v3Corner[0], normalsOne[i]);
+		maxOne = minOne;
+		for (int j = 1; j < 8; i++) 
+		{
+			float currentProjection = glm::dot(v3Corner[j], normalsOne[i]);
+
+			//if the current projection is smaller than the old minimum projection than it becomes the minimum projection
+			if (minOne > currentProjection) 
+			{
+				minOne = currentProjection;
+			}
+
+			//if the current projection is bigger than the old maximum projection than it becomes the maximum projection
+			if (maxOne < currentProjection)
+			{
+				maxOne = currentProjection;
+			}
+		}
+
+		//check the second cube 
+		//check the first points
+		minTwo = glm::dot(v3CornerOther[0], normalsOne[i]);
+		maxTwo = minTwo;
+		for (int k = 1; k < 8; i++)
+		{
+			float currentProjection = glm::dot(v3CornerOther[k], normalsTwo[i]);
+
+			//if the current projection is smaller than the old minimum projection than it becomes the minimum projection
+			if (minTwo > currentProjection)
+			{
+				minTwo = currentProjection;
+			}
+
+			//if the current projection is bigger than the old maximum projection than it becomes the maximum projection
+			if (maxTwo < currentProjection)
+			{
+				maxTwo = currentProjection;
+			}
+		}
+
+		//compare the 2 objects min and max projections and see if they are seperated
+		isColliding = maxOne < minTwo || maxTwo < minOne;
+		if (isColliding) break;
+
+	}
+		//get the normals (not the edge normals) for first object and project the min and max onto those and compare
+	for (int i = 0; i < normalsOne.size(); i++) 
+	{
+		//get the min and max projected along the axis for both cubes along the normals
+		float minOne;
+		float maxOne;
+		float minTwo;
+		float maxTwo;
+		//check the first cube 
+		//check the first points
+		minOne = glm::dot(v3Corner[0], normalsOne[i]);
+		maxOne = minOne;
+		for (int j = 1; j < 8; i++) 
+		{
+			float currentProjection = glm::dot(v3Corner[j], normalsOne[i]);
+
+			//if the current projection is smaller than the old minimum projection than it becomes the minimum projection
+			if (minOne > currentProjection) 
+			{
+				minOne = currentProjection;
+			}
+
+			//if the current projection is bigger than the old maximum projection than it becomes the maximum projection
+			if (maxOne < currentProjection)
+			{
+				maxOne = currentProjection;
+			}
+		}
+
+		//check the second cube 
+		//check the first points
+		minTwo = glm::dot(v3CornerOther[0], normalsOne[i]);
+		maxTwo = minTwo;
+		for (int k = 1; k < 8; i++)
+		{
+			float currentProjection = glm::dot(v3CornerOther[k], normalsOne[i]);
+
+			//if the current projection is smaller than the old minimum projection than it becomes the minimum projection
+			if (minTwo > currentProjection)
+			{
+				minTwo = currentProjection;
+			}
+
+			//if the current projection is bigger than the old maximum projection than it becomes the maximum projection
+			if (maxTwo < currentProjection)
+			{
+				maxTwo = currentProjection;
+			}
+		}
+
+		//compare the 2 objects min and max projections and see if they are seperated
+		isColliding = maxOne < minTwo || maxTwo < minOne;
+		if (isColliding) break;
+
+	}
+
+	//only run if they are not colliding check the axis that are from the second object
+	if (!isColliding) 
+	{
+		//get the normals (not the edge normals) for first object and project the min and max onto those and compare
+		for (int i = 0; i < normalsTwo.size(); i++)
+		{
+			//get the min and max projected along the axis for both cubes along the normals
+			float minOne;
+			float maxOne;
+			float minTwo;
+			float maxTwo;
+			//check the first cube 
+			//check the first points
+			minOne = glm::dot(v3Corner[0], normalsTwo[i]);
+			maxOne = minOne;
+			for (int j = 1; j < 8; i++)
+			{
+				float currentProjection = glm::dot(v3Corner[j], normalsTwo[i]);
+
+				//if the current projection is smaller than the old minimum projection than it becomes the minimum projection
+				if (minOne > currentProjection)
+				{
+					minOne = currentProjection;
+				}
+
+				//if the current projection is bigger than the old maximum projection than it becomes the maximum projection
+				if (maxOne < currentProjection)
+				{
+					maxOne = currentProjection;
+				}
+			}
+
+			//check the second cube 
+			//check the first points
+			minTwo = glm::dot(v3CornerOther[0], normalsTwo[i]);
+			maxTwo = minTwo;
+			for (int k = 1; k < 8; i++)
+			{
+				float currentProjection = glm::dot(v3CornerOther[k], normalsTwo[i]);
+
+				//if the current projection is smaller than the old minimum projection than it becomes the minimum projection
+				if (minTwo > currentProjection)
+				{
+					minTwo = currentProjection;
+				}
+
+				//if the current projection is bigger than the old maximum projection than it becomes the maximum projection
+				if (maxTwo < currentProjection)
+				{
+					maxTwo = currentProjection;
+				}
+			}
+
+			//compare the 2 objects min and max projections and see if they are seperated
+			isColliding = maxOne < minTwo || maxTwo < minOne;
+			if (isColliding) break;
+
+		}
+	}
+
+	//only run if they are not colliding check the axis that are from the second object
+	if (!isColliding)
+	{
+		//get the normals (not the edge normals) for first object and project the min and max onto those and compare
+		for (int i = 0; i < edgeNormals.size(); i++)
+		{
+			//get the min and max projected along the axis for both cubes along the normals
+			float minOne;
+			float maxOne;
+			float minTwo;
+			float maxTwo;
+			//check the first cube 
+			//check the first points
+			minOne = glm::dot(v3Corner[0], edgeNormals[i]);
+			maxOne = minOne;
+			for (int j = 1; j < 8; i++)
+			{
+				float currentProjection = glm::dot(v3Corner[j], edgeNormals[i]);
+
+				//if the current projection is smaller than the old minimum projection than it becomes the minimum projection
+				if (minOne > currentProjection)
+				{
+					minOne = currentProjection;
+				}
+
+				//if the current projection is bigger than the old maximum projection than it becomes the maximum projection
+				if (maxOne < currentProjection)
+				{
+					maxOne = currentProjection;
+				}
+			}
+
+			//check the second cube 
+			//check the first points
+			minTwo = glm::dot(v3CornerOther[0], edgeNormals[i]);
+			maxTwo = minTwo;
+			for (int k = 1; k < 8; i++)
+			{
+				float currentProjection = glm::dot(v3CornerOther[k], edgeNormals[i]);
+
+				//if the current projection is smaller than the old minimum projection than it becomes the minimum projection
+				if (minTwo > currentProjection)
+				{
+					minTwo = currentProjection;
+				}
+
+				//if the current projection is bigger than the old maximum projection than it becomes the maximum projection
+				if (maxTwo < currentProjection)
+				{
+					maxTwo = currentProjection;
+				}
+			}
+
+			//compare the 2 objects min and max projections and see if they are seperated
+			isColliding = maxOne < minTwo || maxTwo < minOne;
+			if (isColliding) break;
+
+		}
+	}
+
+	//if is colliding is true return 1 and if not return 0
+	int collidingNum;
+	if (isColliding == true) 
+	{
+		collidingNum = 1;
+	}
+	if (isColliding == true)
+	{
+		collidingNum = 0;
+	}
 	/*
 	Your code goes here instead of this comment;
 
@@ -286,7 +625,5 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 	Simplex that might help you [eSATResults] feel free to use it.
 	(eSATResults::SAT_NONE has a value of 0)
 	*/
-
-	//there is no axis test that separates this two objects
-	return eSATResults::SAT_NONE;
+	return collidingNum;
 }
