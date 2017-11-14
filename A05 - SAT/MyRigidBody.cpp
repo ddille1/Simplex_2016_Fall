@@ -274,6 +274,13 @@ void MyRigidBody::AddToRenderList(void)
 	}
 }
 
+//function to account for rotation in the corners
+vector3 Math(glm::mat4 transform, glm::vec3 corner) 
+{
+	glm::vec4 temp(corner, 1);
+	temp = transform * temp;
+	return vector3(temp.x, temp.y, temp.z);
+}
 uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 {
 	//bool either for whether the objects are colliding or not
@@ -284,19 +291,23 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 	//vector for the normals for the second cube
 	std::vector<glm::vec3> normalsTwo;
 
+	//get the transforms
+	glm::mat4 transformOne = this->GetModelMatrix();
+	glm::mat4 transformTwo = a_pOther->GetModelMatrix();
+
 	//Calculate the 8 corners of the first cube
 	vector3 v3Corner[8];
 	//Back square
-	v3Corner[0] = m_v3MinL;
-	v3Corner[1] = vector3(m_v3MaxL.x, m_v3MinL.y, m_v3MinL.z);
-	v3Corner[2] = vector3(m_v3MinL.x, m_v3MaxL.y, m_v3MinL.z);
-	v3Corner[3] = vector3(m_v3MaxL.x, m_v3MaxL.y, m_v3MinL.z);
+	v3Corner[0] = Math(transformOne, m_v3MinL);
+	v3Corner[1] = Math(transformOne, vector3(m_v3MaxL.x, m_v3MinL.y, m_v3MinL.z));
+	v3Corner[2] = Math(transformOne, vector3(m_v3MinL.x, m_v3MaxL.y, m_v3MinL.z));
+	v3Corner[3] = Math(transformOne, vector3(m_v3MaxL.x, m_v3MaxL.y, m_v3MinL.z));
 
 	//Front square
-	v3Corner[4] = vector3(m_v3MinL.x, m_v3MinL.y, m_v3MaxL.z);
-	v3Corner[5] = vector3(m_v3MaxL.x, m_v3MinL.y, m_v3MaxL.z);
-	v3Corner[6] = vector3(m_v3MinL.x, m_v3MaxL.y, m_v3MaxL.z);
-	v3Corner[7] = m_v3MaxL;
+	v3Corner[4] = Math(transformOne, vector3(m_v3MinL.x, m_v3MinL.y, m_v3MaxL.z));
+	v3Corner[5] = Math(transformOne, vector3(m_v3MaxL.x, m_v3MinL.y, m_v3MaxL.z));
+	v3Corner[6] = Math(transformOne, vector3(m_v3MinL.x, m_v3MaxL.y, m_v3MaxL.z));
+	v3Corner[7] = Math(transformOne, m_v3MaxL);
 
 	//Place the corners in world space
 	for (uint uIndex = 0; uIndex < 8; ++uIndex)
@@ -307,16 +318,16 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 	//Calculate the 8 corners of the second cube
 	vector3 v3CornerOther[8];
 	//Back square
-	v3CornerOther[0] = a_pOther->GetMinLocal;
-	v3CornerOther[1] = vector3(a_pOther->GetMaxLocal.x, a_pOther->GetMinLocal.y, a_pOther->GetMinLocal.z);
-	v3CornerOther[2] = vector3(a_pOther->GetMinLocal.x, a_pOther->GetMaxLocal.y, a_pOther->GetMinLocal.z);
-	v3CornerOther[3] = vector3(a_pOther->GetMaxLocal.x, a_pOther->GetMaxLocal.y, a_pOther->GetMinLocal.z);
+	v3CornerOther[0] = Math(transformTwo, a_pOther->GetMinLocal());
+	v3CornerOther[1] = Math(transformTwo, vector3(a_pOther->GetMaxLocal().x, a_pOther->GetMinLocal().y, a_pOther->GetMinLocal().z));
+	v3CornerOther[2] = Math(transformTwo, vector3(a_pOther->GetMinLocal().x, a_pOther->GetMaxLocal().y, a_pOther->GetMinLocal().z));
+	v3CornerOther[3] = Math(transformTwo, vector3(a_pOther->GetMaxLocal().x, a_pOther->GetMaxLocal().y, a_pOther->GetMinLocal().z));
 
 	//Front square
-	v3CornerOther[4] = vector3(a_pOther->GetMinLocal.x, a_pOther->GetMinLocal.y, a_pOther->GetMaxLocal.z);
-	v3CornerOther[5] = vector3(a_pOther->GetMaxLocal.x, a_pOther->GetMinLocal.y, a_pOther->GetMaxLocal.z);
-	v3CornerOther[6] = vector3(a_pOther->GetMinLocal.x, a_pOther->GetMaxLocal.y, a_pOther->GetMaxLocal.z);
-	v3CornerOther[7] = a_pOther->GetMaxLocal;
+	v3CornerOther[4] = Math(transformTwo, vector3(a_pOther->GetMinLocal().x, a_pOther->GetMinLocal().y, a_pOther->GetMaxLocal().z));
+	v3CornerOther[5] = Math(transformTwo, vector3(a_pOther->GetMaxLocal().x, a_pOther->GetMinLocal().y, a_pOther->GetMaxLocal().z));
+	v3CornerOther[6] = Math(transformTwo, vector3(a_pOther->GetMinLocal().x, a_pOther->GetMaxLocal().y, a_pOther->GetMaxLocal().z));
+	v3CornerOther[7] = Math(transformTwo, a_pOther->GetMaxLocal());
 
 	//Place the corners in world space
 	for (uint uIndex = 0; uIndex < 8; ++uIndex)
@@ -329,25 +340,25 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 	glm::vec3 V(v3Corner[2] - v3Corner[0]);
 	normalsOne.push_back(glm::normalize(glm::vec3((U.y * V.z) - (U.z * V.y), (U.z * V.x) - (U.x * V.z), (U.x * V.y) - (U.y * V.x))));
 
-	glm::vec3 U(v3Corner[2] - v3Corner[3]);
-	glm::vec3 V(v3Corner[4] - v3Corner[3]);
+	U = (v3Corner[2] - v3Corner[3]);
+	V = (v3Corner[4] - v3Corner[3]);
 	normalsOne.push_back(glm::normalize(glm::vec3((U.y * V.z) - (U.z * V.y), (U.z * V.x) - (U.x * V.z), (U.x * V.y) - (U.y * V.x))));
 
-	glm::vec3 U(v3Corner[6] - v3Corner[1]);
-	glm::vec3 V(v3Corner[4] - v3Corner[1]);
+	U = (v3Corner[6] - v3Corner[1]);
+	V = (v3Corner[4] - v3Corner[1]);
 	normalsOne.push_back(glm::normalize(glm::vec3((U.y * V.z) - (U.z * V.y), (U.z * V.x) - (U.x * V.z), (U.x * V.y) - (U.y * V.x))));
 
 	//using the corners calculate the normals using the corners of the second cube
-	glm::vec3 U(v3CornerOther[1] - v3CornerOther[0]);
-	glm::vec3 V(v3CornerOther[2] - v3CornerOther[0]);
+	U = (v3CornerOther[1] - v3CornerOther[0]);
+	V = (v3CornerOther[2] - v3CornerOther[0]);
 	normalsTwo.push_back(glm::normalize(glm::vec3((U.y * V.z) - (U.z * V.y), (U.z * V.x) - (U.x * V.z), (U.x * V.y) - (U.y * V.x))));
 
-	glm::vec3 U(v3CornerOther[2] - v3CornerOther[3]);
-	glm::vec3 V(v3CornerOther[4] - v3CornerOther[3]);
+	U = (v3CornerOther[2] - v3CornerOther[3]);
+	V = (v3CornerOther[4] - v3CornerOther[3]);
 	normalsTwo.push_back(glm::normalize(glm::vec3((U.y * V.z) - (U.z * V.y), (U.z * V.x) - (U.x * V.z), (U.x * V.y) - (U.y * V.x))));
 
-	glm::vec3 U(v3CornerOther[6] - v3CornerOther[1]);
-	glm::vec3 V(v3CornerOther[4] - v3CornerOther[1]);
+	U = (v3CornerOther[6] - v3CornerOther[1]);
+	V = (v3CornerOther[4] - v3CornerOther[1]);
 	normalsTwo.push_back(glm::normalize(glm::vec3((U.y * V.z) - (U.z * V.y), (U.z * V.x) - (U.x * V.z), (U.x * V.y) - (U.y * V.x))));
 
 	//calculate the edge normals
@@ -370,7 +381,11 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 	{
 		for (int j = 0; j < 3; j++) 
 		{
-			edgeNormals.push_back(glm::normalize(glm::cross(edgesCubeOne[i], edgesCubeTwo[j])));
+			auto temp = glm::cross(edgesCubeOne[i], edgesCubeTwo[j]);
+			if (temp != glm::vec3(0.0f, 0.0f, 0.0f)) 
+			{
+				edgeNormals.push_back(glm::normalize(temp));
+			}
 		}
 	}
 
@@ -386,7 +401,7 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 		//check the first points
 		minOne = glm::dot(v3Corner[0], normalsOne[i]);
 		maxOne = minOne;
-		for (int j = 1; j < 8; i++) 
+		for (int j = 1; j < 8; j++) 
 		{
 			float currentProjection = glm::dot(v3Corner[j], normalsOne[i]);
 
@@ -407,64 +422,9 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 		//check the first points
 		minTwo = glm::dot(v3CornerOther[0], normalsOne[i]);
 		maxTwo = minTwo;
-		for (int k = 1; k < 8; i++)
+		for (int k = 1; k < 8; k++)
 		{
 			float currentProjection = glm::dot(v3CornerOther[k], normalsTwo[i]);
-
-			//if the current projection is smaller than the old minimum projection than it becomes the minimum projection
-			if (minTwo > currentProjection)
-			{
-				minTwo = currentProjection;
-			}
-
-			//if the current projection is bigger than the old maximum projection than it becomes the maximum projection
-			if (maxTwo < currentProjection)
-			{
-				maxTwo = currentProjection;
-			}
-		}
-
-		//compare the 2 objects min and max projections and see if they are seperated
-		isColliding = maxOne < minTwo || maxTwo < minOne;
-		if (isColliding) break;
-
-	}
-		//get the normals (not the edge normals) for first object and project the min and max onto those and compare
-	for (int i = 0; i < normalsOne.size(); i++) 
-	{
-		//get the min and max projected along the axis for both cubes along the normals
-		float minOne;
-		float maxOne;
-		float minTwo;
-		float maxTwo;
-		//check the first cube 
-		//check the first points
-		minOne = glm::dot(v3Corner[0], normalsOne[i]);
-		maxOne = minOne;
-		for (int j = 1; j < 8; i++) 
-		{
-			float currentProjection = glm::dot(v3Corner[j], normalsOne[i]);
-
-			//if the current projection is smaller than the old minimum projection than it becomes the minimum projection
-			if (minOne > currentProjection) 
-			{
-				minOne = currentProjection;
-			}
-
-			//if the current projection is bigger than the old maximum projection than it becomes the maximum projection
-			if (maxOne < currentProjection)
-			{
-				maxOne = currentProjection;
-			}
-		}
-
-		//check the second cube 
-		//check the first points
-		minTwo = glm::dot(v3CornerOther[0], normalsOne[i]);
-		maxTwo = minTwo;
-		for (int k = 1; k < 8; i++)
-		{
-			float currentProjection = glm::dot(v3CornerOther[k], normalsOne[i]);
 
 			//if the current projection is smaller than the old minimum projection than it becomes the minimum projection
 			if (minTwo > currentProjection)
@@ -500,9 +460,9 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 			//check the first points
 			minOne = glm::dot(v3Corner[0], normalsTwo[i]);
 			maxOne = minOne;
-			for (int j = 1; j < 8; i++)
+			for (int j = 1; j < 8; j++)
 			{
-				float currentProjection = glm::dot(v3Corner[j], normalsTwo[i]);
+				float currentProjection = glm::dot(v3Corner[j], normalsOne[i]);
 
 				//if the current projection is smaller than the old minimum projection than it becomes the minimum projection
 				if (minOne > currentProjection)
@@ -521,7 +481,7 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 			//check the first points
 			minTwo = glm::dot(v3CornerOther[0], normalsTwo[i]);
 			maxTwo = minTwo;
-			for (int k = 1; k < 8; i++)
+			for (int k = 1; k < 8; k++)
 			{
 				float currentProjection = glm::dot(v3CornerOther[k], normalsTwo[i]);
 
@@ -560,7 +520,7 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 			//check the first points
 			minOne = glm::dot(v3Corner[0], edgeNormals[i]);
 			maxOne = minOne;
-			for (int j = 1; j < 8; i++)
+			for (int j = 1; j < 8; j++)
 			{
 				float currentProjection = glm::dot(v3Corner[j], edgeNormals[i]);
 
@@ -581,7 +541,7 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 			//check the first points
 			minTwo = glm::dot(v3CornerOther[0], edgeNormals[i]);
 			maxTwo = minTwo;
-			for (int k = 1; k < 8; i++)
+			for (int k = 1; k < 8; k++)
 			{
 				float currentProjection = glm::dot(v3CornerOther[k], edgeNormals[i]);
 
