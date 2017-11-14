@@ -275,16 +275,17 @@ void MyRigidBody::AddToRenderList(void)
 }
 
 //function to account for rotation in the corners
-vector3 Math(glm::mat4 transform, glm::vec3 corner) 
+vector3 Math(glm::mat4 transform, glm::vec3 corner, glm::mat4 m_m4ToWorld) 
 {
 	glm::vec4 temp(corner, 1);
+	temp = m_m4ToWorld * temp;
 	temp = transform * temp;
 	return vector3(temp.x, temp.y, temp.z);
 }
 uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 {
 	//bool either for whether the objects are colliding or not
-	bool isColliding = false;
+	bool isSeperated = false;
 	//vector for the normals for the first cube
 	std::vector<glm::vec3> normalsOne;
 
@@ -298,42 +299,42 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 	//Calculate the 8 corners of the first cube
 	vector3 v3Corner[8];
 	//Back square
-	v3Corner[0] = Math(transformOne, m_v3MinL);
-	v3Corner[1] = Math(transformOne, vector3(m_v3MaxL.x, m_v3MinL.y, m_v3MinL.z));
-	v3Corner[2] = Math(transformOne, vector3(m_v3MinL.x, m_v3MaxL.y, m_v3MinL.z));
-	v3Corner[3] = Math(transformOne, vector3(m_v3MaxL.x, m_v3MaxL.y, m_v3MinL.z));
+	v3Corner[0] = Math(transformOne, m_v3MinL, m_m4ToWorld);
+	v3Corner[1] = Math(transformOne, vector3(m_v3MaxL.x, m_v3MinL.y, m_v3MinL.z), m_m4ToWorld);
+	v3Corner[2] = Math(transformOne, vector3(m_v3MinL.x, m_v3MaxL.y, m_v3MinL.z), m_m4ToWorld);
+	v3Corner[3] = Math(transformOne, vector3(m_v3MaxL.x, m_v3MaxL.y, m_v3MinL.z), m_m4ToWorld);
 
 	//Front square
-	v3Corner[4] = Math(transformOne, vector3(m_v3MinL.x, m_v3MinL.y, m_v3MaxL.z));
-	v3Corner[5] = Math(transformOne, vector3(m_v3MaxL.x, m_v3MinL.y, m_v3MaxL.z));
-	v3Corner[6] = Math(transformOne, vector3(m_v3MinL.x, m_v3MaxL.y, m_v3MaxL.z));
-	v3Corner[7] = Math(transformOne, m_v3MaxL);
+	v3Corner[4] = Math(transformOne, vector3(m_v3MinL.x, m_v3MinL.y, m_v3MaxL.z), m_m4ToWorld);
+	v3Corner[5] = Math(transformOne, vector3(m_v3MaxL.x, m_v3MinL.y, m_v3MaxL.z), m_m4ToWorld);
+	v3Corner[6] = Math(transformOne, vector3(m_v3MinL.x, m_v3MaxL.y, m_v3MaxL.z), m_m4ToWorld);
+	v3Corner[7] = Math(transformOne, m_v3MaxL, m_m4ToWorld);
 
 	//Place the corners in world space
-	for (uint uIndex = 0; uIndex < 8; ++uIndex)
+	/*for (uint uIndex = 0; uIndex < 8; ++uIndex)
 	{
 		v3Corner[uIndex] = vector3(m_m4ToWorld * vector4(v3Corner[uIndex], 1.0f));
-	}
+	}*/
 
 	//Calculate the 8 corners of the second cube
 	vector3 v3CornerOther[8];
 	//Back square
-	v3CornerOther[0] = Math(transformTwo, a_pOther->GetMinLocal());
-	v3CornerOther[1] = Math(transformTwo, vector3(a_pOther->GetMaxLocal().x, a_pOther->GetMinLocal().y, a_pOther->GetMinLocal().z));
-	v3CornerOther[2] = Math(transformTwo, vector3(a_pOther->GetMinLocal().x, a_pOther->GetMaxLocal().y, a_pOther->GetMinLocal().z));
-	v3CornerOther[3] = Math(transformTwo, vector3(a_pOther->GetMaxLocal().x, a_pOther->GetMaxLocal().y, a_pOther->GetMinLocal().z));
+	v3CornerOther[0] = Math(transformTwo, a_pOther->GetMinLocal(), m_m4ToWorld);
+	v3CornerOther[1] = Math(transformTwo, vector3(a_pOther->GetMaxLocal().x, a_pOther->GetMinLocal().y, a_pOther->GetMinLocal().z), m_m4ToWorld);
+	v3CornerOther[2] = Math(transformTwo, vector3(a_pOther->GetMinLocal().x, a_pOther->GetMaxLocal().y, a_pOther->GetMinLocal().z), m_m4ToWorld);
+	v3CornerOther[3] = Math(transformTwo, vector3(a_pOther->GetMaxLocal().x, a_pOther->GetMaxLocal().y, a_pOther->GetMinLocal().z), m_m4ToWorld);
 
 	//Front square
-	v3CornerOther[4] = Math(transformTwo, vector3(a_pOther->GetMinLocal().x, a_pOther->GetMinLocal().y, a_pOther->GetMaxLocal().z));
-	v3CornerOther[5] = Math(transformTwo, vector3(a_pOther->GetMaxLocal().x, a_pOther->GetMinLocal().y, a_pOther->GetMaxLocal().z));
-	v3CornerOther[6] = Math(transformTwo, vector3(a_pOther->GetMinLocal().x, a_pOther->GetMaxLocal().y, a_pOther->GetMaxLocal().z));
-	v3CornerOther[7] = Math(transformTwo, a_pOther->GetMaxLocal());
+	v3CornerOther[4] = Math(transformTwo, vector3(a_pOther->GetMinLocal().x, a_pOther->GetMinLocal().y, a_pOther->GetMaxLocal().z), m_m4ToWorld);
+	v3CornerOther[5] = Math(transformTwo, vector3(a_pOther->GetMaxLocal().x, a_pOther->GetMinLocal().y, a_pOther->GetMaxLocal().z), m_m4ToWorld);
+	v3CornerOther[6] = Math(transformTwo, vector3(a_pOther->GetMinLocal().x, a_pOther->GetMaxLocal().y, a_pOther->GetMaxLocal().z), m_m4ToWorld);
+	v3CornerOther[7] = Math(transformTwo, a_pOther->GetMaxLocal(), m_m4ToWorld);
 
 	//Place the corners in world space
-	for (uint uIndex = 0; uIndex < 8; ++uIndex)
+	/*for (uint uIndex = 0; uIndex < 8; ++uIndex)
 	{
 		v3CornerOther[uIndex] = vector3(m_m4ToWorld * vector4(v3CornerOther[uIndex], 1.0f));
-	}
+	}*/
 
 	//using the corners calculate the normals using the corners of the first cube
 	glm::vec3 U(v3Corner[1] - v3Corner[0]);
@@ -440,13 +441,13 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 		}
 
 		//compare the 2 objects min and max projections and see if they are seperated
-		isColliding = maxOne < minTwo || maxTwo < minOne;
-		if (isColliding) break;
+		isSeperated = maxOne < minTwo || maxTwo < minOne;
+		if (isSeperated) break;
 
 	}
 
 	//only run if they are not colliding check the axis that are from the second object
-	if (!isColliding) 
+	if (!isSeperated) 
 	{
 		//get the normals (not the edge normals) for first object and project the min and max onto those and compare
 		for (int i = 0; i < normalsTwo.size(); i++)
@@ -499,14 +500,14 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 			}
 
 			//compare the 2 objects min and max projections and see if they are seperated
-			isColliding = maxOne < minTwo || maxTwo < minOne;
-			if (isColliding) break;
+			isSeperated = maxOne < minTwo || maxTwo < minOne;
+			if (isSeperated) break;
 
 		}
 	}
 
 	//only run if they are not colliding check the axis that are from the second object
-	if (!isColliding)
+	if (!isSeperated)
 	{
 		//get the normals (not the edge normals) for first object and project the min and max onto those and compare
 		for (int i = 0; i < edgeNormals.size(); i++)
@@ -559,21 +560,21 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 			}
 
 			//compare the 2 objects min and max projections and see if they are seperated
-			isColliding = maxOne < minTwo || maxTwo < minOne;
-			if (isColliding) break;
+			isSeperated = maxOne < minTwo || maxTwo < minOne;
+			if (isSeperated) break;
 
 		}
 	}
 
 	//if is colliding is true return 1 and if not return 0
 	int collidingNum;
-	if (isColliding == true) 
-	{
-		collidingNum = 1;
-	}
-	if (isColliding == true)
+	if (isSeperated == true) 
 	{
 		collidingNum = 0;
+	}
+	if (isSeperated == false)
+	{
+		collidingNum = 1;
 	}
 	/*
 	Your code goes here instead of this comment;
