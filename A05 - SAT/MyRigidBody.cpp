@@ -228,11 +228,10 @@ bool MyRigidBody::IsColliding(MyRigidBody* const a_pOther)
 {
 	//check if spheres are colliding as pre-test
 	bool bColliding = (glm::distance(GetCenterGlobal(), a_pOther->GetCenterGlobal()) < m_fRadius + a_pOther->m_fRadius);
-	
 	//if they are colliding check the SAT
 	if (bColliding)
 	{
-		if(SAT(a_pOther) != eSATResults::SAT_NONE)
+		if(SAT(a_pOther) == eSATResults::SAT_NONE)
 			bColliding = false;// reset to false
 	}
 
@@ -284,6 +283,9 @@ vector3 Math(glm::mat4 transform, glm::vec3 corner, glm::mat4 m_m4ToWorld)
 }
 uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 {
+	// I worked with Stephen Maier on this> we both had trouble seeing what was wrong with the code because for all we could see the code and the math should work. Unless I missed something important that we both did not see.
+	// It appears to be detecting collisions but not correctly.
+
 	//bool either for whether the objects are colliding or not
 	bool isSeperated = false;
 	//vector for the normals for the first cube
@@ -570,10 +572,28 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 	int collidingNum;
 	if (isSeperated == true) 
 	{
+		for (uint uIndex = 0; uIndex < 8; ++uIndex)
+		{
+			std::cout << "is not colliding" << std::endl;
+			std::cout << v3Corner[uIndex].x << std::endl;
+			std::cout << v3Corner[uIndex].y << std::endl;
+			std::cout << v3CornerOther[uIndex].x << std::endl;
+			std::cout << v3CornerOther[uIndex].y << std::endl;
+
+		}
 		collidingNum = 0;
 	}
 	if (isSeperated == false)
 	{
+		for (uint uIndex = 0; uIndex < 8; ++uIndex)
+		{
+			std::cout << "is colliding" << std::endl;
+			std::cout << v3Corner[uIndex].x << std::endl;
+			std::cout << v3Corner[uIndex].y << std::endl;
+			std::cout << v3CornerOther[uIndex].x << std::endl;
+			std::cout << v3CornerOther[uIndex].y << std::endl;
+		}
+		
 		collidingNum = 1;
 	}
 	/*

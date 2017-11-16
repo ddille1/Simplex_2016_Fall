@@ -47,6 +47,8 @@ void Application::Update(void)
 	matrix4 mSteve = glm::translate(vector3(2.25f, 0.0f, 0.0f)) * glm::rotate(IDENTITY_M4, -55.0f, AXIS_Z);
 	m_pSteve->SetModelMatrix(mSteve);
 	m_pSteveRB->SetModelMatrix(mSteve);
+	///here
+	m_pSteveRB->SetVisibleOBB(true);
 	m_pMeshMngr->AddAxisToRenderList(mSteve);
 
 	bool bColliding = m_pCreeperRB->IsColliding(m_pSteveRB);
