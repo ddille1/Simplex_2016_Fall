@@ -46,6 +46,50 @@ int Simplex::MyEntityManager::GetEntityIndex(String a_sUniqueID)
 }
 //Accessors
 Simplex::uint Simplex::MyEntityManager::GetEntityCount(void) {	return m_uEntityCount; }
+vector3 Simplex::MyEntityManager::GetMin(void)
+{
+	vector3 min = vector3(0.0f, 0.0f, 0.0f);
+	for (uint uIndex = 0; uIndex < m_uEntityCount; ++uIndex) 
+	{
+		matrix4 modelMatrix = m_mEntityArray[uIndex]->GetModelMatrix();
+		vector3 position = glm::vec3(modelMatrix[3]);
+		if (position.x < min.x) 
+		{
+			min.x = position.x;
+		}
+		if (position.y < min.y)
+		{
+			min.y = position.y;
+		}
+		if (position.z < min.z)
+		{
+			min.z = position.z;
+		}
+	}
+	return min;
+}
+vector3 Simplex::MyEntityManager::GetMax(void)
+{
+	vector3 max = vector3(0.0f, 0.0f, 0.0f);
+	for (uint uIndex = 0; uIndex < m_uEntityCount; ++uIndex)
+	{
+		matrix4 modelMatrix = m_mEntityArray[uIndex]->GetModelMatrix();
+		vector3 position = glm::vec3(modelMatrix[3]);
+		if (position.x > max.x)
+		{
+			max.x = position.x;
+		}
+		if (position.y > max.y)
+		{
+			max.y = position.y;
+		}
+		if (position.z > max.z)
+		{
+			max.z = position.z;
+		}
+	}
+	return max;
+}
 Simplex::Model* Simplex::MyEntityManager::GetModel(uint a_uIndex)
 {
 	//if the list is empty return

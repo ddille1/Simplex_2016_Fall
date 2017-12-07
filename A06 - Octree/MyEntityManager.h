@@ -246,6 +246,9 @@ public:
 	OUTPUT: MyEntity count
 	*/
 	uint GetEntityCount(void);
+
+	vector3 GetMin(void);
+	vector3 GetMax(void);
 private:
 	/*
 	Usage: constructor

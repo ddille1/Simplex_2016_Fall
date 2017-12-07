@@ -437,6 +437,8 @@ public:
 	OUTPUT: ---
 	*/
 	void SetFont(String a_sTextureName);
+
+	
 private:
 	//Rule of 3
 	/*

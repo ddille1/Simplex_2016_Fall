@@ -381,6 +381,7 @@ void MeshManager::AddSkyboxToRenderList(String a_sFileName)
 	AddMeshToRenderList(nMeshIndex, IDENTITY_M4);
 	return;
 }
+
 int MeshManager::GetMeshIndex(Mesh* a_pMesh)
 {
 	uint uMeshCount = m_meshList.size();

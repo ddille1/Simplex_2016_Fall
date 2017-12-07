@@ -13,6 +13,7 @@ namespace Simplex
 //System Class
 class MyEntity
 {
+	
 	bool m_bInMemory = false; //loaded flag
 	bool m_bSetAxis = false; //render axis flag
 	String m_sUniqueID = ""; //Unique identifier name
